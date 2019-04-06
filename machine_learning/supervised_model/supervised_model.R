@@ -4,7 +4,7 @@
 ##################################################################################################
 
 # Install and load required packages
-packages <- c("rdrop2",
+packages <- c("aws.s3",
               "data.table",
               "dummies",
               "caret",
@@ -36,72 +36,18 @@ if (file.exists(data_path)) {
 
 }
 
-# Clone repo where the Dropbox .rds auth token is stored
-
-if (file.exists("public_drop_box_token")) {
-
-  setwd("public_drop_box_token")
-  token <- readRDS("token.rds")
-  drop_dir(dtoken = token)
-
-} else {
-
-  system("git clone https://github.com/b-shelton/public_drop_box_token")
-  setwd("public_drop_box_token")
-  token <- readRDS("token.rds")
-  drop_dir(dtoken = token)
-
-}
-
 
 ##################################################################################################
 # Download and read the 'loan.csv' file to memory
 ##################################################################################################
 
-drop_download('loan.csv')
-
 set.seed(32541)
-
-#Download the loan.csv file out of the .zip archive found at the following path to access the "loan.csv" dataset:
-#https://www.kaggle.com/wendykan/lending-club-loan-data/downloads/lending-club-loan-data.zip
-
-loans <- fread("loan.csv")
+loans1 <- df <- aws.s3::s3read_using(FUN = fread, object = "loan_data.csv", bucket = "example.data")
 
 
 ##################################################################################################
-# Peform Data Pre-Processing
+# Perform Data Pre-Processing
 ##################################################################################################
-
-#select the numeric and categorical variables to include in the machine learning models
-loans1 <- loans[loan_status %in% c("Charged Off", "Fully Paid"), c("dti",
-                                                                   "annual_inc",
-                                                                   "delinq_2yrs",
-                                                                   "inq_last_6mths",
-                                                                   "open_acc",
-                                                                   "pub_rec",
-                                                                   "revol_bal",
-                                                                   "revol_util",
-                                                                   "total_acc",
-                                                                   "out_prncp",
-                                                                   "out_prncp_inv",
-                                                                   "total_pymnt",
-                                                                   "total_pymnt_inv",
-                                                                   "total_rec_prncp",
-                                                                   "total_rec_int",
-                                                                   "total_rec_late_fee",
-                                                                   "recoveries",
-                                                                   "collection_recovery_fee",
-                                                                   "last_pymnt_amnt",
-                                                                   "collections_12_mths_ex_med",
-                                                                   "loan_status",
-                                                                   "purpose",
-                                                                   "home_ownership",
-                                                                   "grade",
-                                                                   "emp_length",
-                                                                   "term",
-                                                                   "addr_state",
-                                                                   "verification_status",
-                                                                   "application_type")]
 
 #one hot encode the categorical variables
 loans2 <- data.table(dummy.data.frame(loans1,
