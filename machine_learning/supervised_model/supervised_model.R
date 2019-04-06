@@ -55,6 +55,11 @@ if (file.exists("public_drop_box_token")) {
   
 }
 
+
+##################################################################################################
+# Download and read the 'loan.csv' file to memory
+##################################################################################################
+
 drop_download('loan.csv')
 
 set.seed(32541)
@@ -63,6 +68,11 @@ set.seed(32541)
 #https://www.kaggle.com/wendykan/lending-club-loan-data/downloads/lending-club-loan-data.zip
 
 loans <- fread("loan.csv")
+
+
+##################################################################################################
+# Peform Data Pre-Processing
+##################################################################################################
 
 #select the numeric and categorical variables to include in the machine learning models
 loans1 <- loans[loan_status %in% c("Charged Off", "Fully Paid"), c("dti",
