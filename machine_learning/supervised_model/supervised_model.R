@@ -1,5 +1,10 @@
-#load required packages
-packages <- c("downloader", 
+
+##################################################################################################
+# Configure required environment
+##################################################################################################
+
+# Install and load required packages
+packages <- c("rdrop2", 
               "data.table", 
               "dummies", 
               "caret", 
@@ -13,26 +18,44 @@ packages <- c("downloader",
               "ggplot2")
 
 new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
-if(length(new_packages)) install.packages(new_packages)
-
-library(downloader)
-library(data.table)
-library(dummies)
-library(caret)
-library(FNN)
-library(pROC)
-library(rpart)
-library(rpart.plot)
-library(Matrix)
-library(xgboost)
-library(reshape2)
-library(ggplot2)
+if (length(new_packages)) install.packages(new_packages)
+for (p in packages) library(p, character.only = TRUE, quietly = TRUE)
 
 
+# Create local directory to download data
+data_path <- "loan_data"
 
-#set working directory
-wd <- "/Users/user1/Documents" #specify directory from which to download and load the data
-setwd(wd)
+if (file.exists(data_path)) {
+  
+  setwd(paste0("~/", data_path))
+
+  } else {
+  
+  dir.create(file.path(data_path))
+  setwd(paste0("~/", data_path))
+  
+}
+
+# Clone repo
+ssh_public <- "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDuc1cLjw6U5g12Gl9Esd8oW0hby6YMYG447mN3gD+RJo+wOWoF+D9te0mtFTQBvhyjbHf9WtiL/3z9CQD8YFjSGVwvKZdIq01JDF6h5C5RplqfudcRcNESONXl8AlgqdK6s3JAx/2Pw1FJPMvVUWwfI1+JXSMfnd3htmvuQis9nnsErlcoPCeD7iBir6CXObe3H7zDWk1lYcVu0qfvGUhlJC9zZsDx5d0VOyGGzhA80189vyo0952rHaaoXJn5jtCXMFpa5gNKPCkCxdh1/YYnFSDyxakpqjvsjjICZjTnOWUsynBhzMojBFacPIxgD984EcyGbsoTCsQhRChaPbXfDyPUTdoRJEg5D2fppOeffoWwe5nRLnEpXZu8B+2V0woK6Gfaz7PQ/4lV7bPRHCMJ8JoiNLRHM/ZR7beYaeYSjQmW/O2j/8s11bv5qA0yvO9X9dO4bJtxpHxEhZ8rIhHbYyece5+eGYxQe497IMg9tCEe7HHUs1czyrRm0grs2ff+7CWa1mj/fIqFDR2ZQIvd8cZxTf3LoF+EqppSSPHWjIkUNMhigvKKIjlIGvBtni1rVzRfEeBijudx7FzItcubOm5beyqQe9B0m46yPY5I0T49ostRNUpQevloGTyAEfTD+70W9U0ruTbovmWuQNjm3VD6HBrA1mr4tWcbaNqy+Q== bshelton.portfolio@gmail.com#"
+write(ssh_public, "~/.ssh/model.pub")
+
+if (file.exists("public_drop_box_token")) {
+  
+  setwd("public_drop_box_token")
+  token <- readRDS("token.rds")
+  drop_dir(dtoken = token)
+  
+} else {
+  
+  system("git clone https://github.com/b-shelton/public_drop_box_token")
+  setwd("public_drop_box_token")
+  token <- readRDS("token.rds")
+  drop_dir(dtoken = token)
+  
+}
+
+drop_download('loan.csv')
 
 set.seed(32541)
 
@@ -113,36 +136,6 @@ nzvar <- subset(nearZeroVar(train, saveMetrics = TRUE), nzv ==TRUE & percentUniq
 train <- train[, names(train) %ni% rownames(nzvar)]
 test <- test[, names(test) %ni% rownames(nzvar)]
 
-
-
-##################################################################################################
-#K-Nearest Neighbors Model                                                                       
-##################################################################################################
-
-#train knn model
-k <- 9
-system.time(
-  knn_model <- knn(train = train, 
-                   test = test, 
-                   cl = train.a$loan_status, 
-                   k = k)
-)
-
-closest <- train[c(attr(knn_model, "nn.index")[1,]), ]
-closest$type <- "train"
-test1 <- test
-test1$type <- "test"
-
-knn_pred <- knn_model[1:nrow(test.a)] #apply trained knn model to test data
-knn_cm <- confusionMatrix(knn_pred, test.a$loan_status)
-knn_sens <- sensitivity(knn_pred, as.factor(test.a$loan_status))
-knn_spec <- specificity(knn_pred, as.factor(test.a$loan_status))
-
-knn_labels <- test.a$loan_status
-knn_predictions <- ifelse(knn_pred[1:nrow(test)] == "Charged Off", 1, 0)
-knn_labels <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
-knn_roc <- roc(knn_labels, knn_predictions)
-knn_auc <- auc(knn_roc)
 
 
 
@@ -390,23 +383,19 @@ gb_auc <- auc(gb_roc)
 #Compare the ability of the five different models to predict the outcomes of the test set
 ##################################################################################################
 
-results <- data.frame(cbind(rbind(knn_auc,
-                                  logit_auc,
+results <- data.frame(cbind(rbind(logit_auc,
                                   dtree_auc,
                                   rf_auc,
                                   gb_auc),
-                            rbind(knn_sens,
-                                  logit_sens,
+                            rbind(logit_sens,
                                   dtree_sens,
                                   rf_sens,
                                   gb_sens),
-                            rbind(knn_spec,
-                                  logit_spec,
+                            rbind(logit_spec,
                                   dtree_spec,
                                   rf_spec,
                                   gb_spec)))
-rownames(results) <- c("K-Nearest Neighbors (k=9)", 
-                       "Logistic Regression w/ PCA", 
+rownames(results) <- c("Logistic Regression w/ PCA", 
                        "Decision Tree", 
                        "Random Forest", 
                        "Gradient Boosting")
