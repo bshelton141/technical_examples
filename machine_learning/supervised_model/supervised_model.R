@@ -227,7 +227,7 @@ fitControl <- trainControl(method="cv",
                            number=3,
                            allowParallel = TRUE)
 
-tunegrid <- expand.grid(.mtry=c(9:18), .ntree=c(250, 325, 400))
+tunegrid <- expand.grid(.mtry=c(9:18), .ntree=c(50, 75, 100))
 
 system.time(
   rf_model <- train(as.factor(loan_status) ~ ., 
