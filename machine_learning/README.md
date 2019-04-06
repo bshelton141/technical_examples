@@ -2,5 +2,5 @@
 
 This folder contains two machine learning examples:
 
-- Supervised
-- Unsupervised
+- Supervised Learning Model Development
+- Unsupervised Learning Model Development
