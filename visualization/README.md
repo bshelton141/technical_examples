@@ -3,4 +3,4 @@
 This folder contains a sub-folder that demonstrates the ability to develop and publish R Shiny Apps. Please find additional visualization examples at the following links:
 
 - Brandon Shelton's [Tableau Public page](https://public.tableau.com/profile/brandon.shelton#!/)
-- Brandon Shelton's [rpubs page](http://rpubs.com/bshelton141/)
+- Brandon Shelton's [RPubs page](http://rpubs.com/bshelton141/)
