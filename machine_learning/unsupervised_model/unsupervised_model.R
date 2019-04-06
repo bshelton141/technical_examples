@@ -1,0 +1,141 @@
+#load required packages
+
+packages <- c("data.table",
+              "stats",
+              "ggplot2",
+              "dplyr",
+              "tidyr")
+
+new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+
+library(data.table)
+library(stats)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+#set working directory
+wd <- "/Users/user1/Documents" #specify directory to download data
+setwd(wd)
+
+set.seed(32541)
+
+#Download the Medicare_Provider_Util_Payment_PUF_CY2015.txt" dataset out of the .zip archive found at the following path: 
+#http://www.cms.gov/apps/ama/license.asp?file=http://download.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Medicare-Provider-Charge-Data/Downloads/Medicare_Provider_Util_Payment_PUF_CY2015.zip
+
+
+
+mcr_file <- "Medicare_Provider_Util_Payment_PUF_CY2015.txt"
+mcr <- fread(mcr_file)
+
+#filter data to include only Pain Management providers in California
+mcr <- mcr[2:nrow(mcr)]
+ca <- mcr[nppes_provider_state == "CA" & provider_type == "Pain Management"]
+rm(mcr)
+
+#create a new field titled "lines_per_bene"
+ca$lines_per_bene <- ca$line_srvc_cnt / ca$bene_unique_cnt
+
+
+ca <- ca[, c("npi", 
+             "provider_type", 
+             "hcpcs_code",
+             "line_srvc_cnt",
+             "bene_unique_cnt",
+             "bene_day_srvc_cnt",
+             "lines_per_bene")]
+
+#transform (cast wide) focal variables for evaluation by the k-means clustering algorithm
+d1 <- dcast(ca, npi ~ hcpcs_code, value.var = c("line_srvc_cnt"), sum)
+d2 <- dcast(ca, npi ~ hcpcs_code, value.var = c("bene_unique_cnt"), sum)
+d3 <- dcast(ca, npi ~ hcpcs_code, value.var = c("bene_day_srvc_cnt"), sum)
+d4 <- dcast(ca, npi ~ hcpcs_code, value.var = c("lines_per_bene"), sum)
+
+colnames(d1) <- paste("line_cnt:", colnames(d1))
+colnames(d2) <- paste("bene_unique_cnt:", colnames(d2))
+colnames(d3) <- paste("bene_day_srvc_cnt:", colnames(d3))
+colnames(d4) <- paste("lines_per_bene:", colnames(d4))
+colnames(d1)[1] <- colnames(d2)[1] <- colnames(d3)[1] <- colnames(d4)[1] <- "npi"
+
+final.a <- dplyr::left_join(d1, d2, by = "npi")
+final.b <- dplyr::left_join(final.a, d3, by = "npi")
+final <- dplyr::left_join(final.b, d4, by = "npi")
+
+npi <- final$npi
+final$npi <- NULL
+final <- scale(final) #normalize the predictor variables
+dim(final)
+
+#evaluate the percentage of cluster-explained variance of different cluster counts
+cluster_range <- c(2:14)
+pct_var <- data.frame(pct_var = 0,
+                      change = 0,
+                      num_clusters = cluster_range)
+totalss <- kmeans(final, centers = 14, nstart = 10)$totss
+for(i in cluster_range){
+  pct_var[i-1, 'pct_var'] <- kmeans(final, centers = i, nstart = 10)$betweenss/totalss
+}
+for(i in 2:13){
+  pct_var[i, 'change'] <- pct_var[i, 'pct_var'] - pct_var[i-1, 'pct_var']
+}
+
+pct_var_chart <- ggplot(data = pct_var, aes(x = num_clusters, y = pct_var)) + 
+  geom_line() + 
+  geom_point() +
+  scale_x_continuous(breaks = c(min(pct_var$num_clusters):max(pct_var$num_clusters))) +
+  geom_line(data = pct_var, aes(x = num_clusters, y = change, colour = "red")) +
+  theme(legend.position = "none") +
+  labs(title = "Percentage of Variance Explained by Cluster Count (black line)")
+
+print(pct_var_chart)
+print(pct_var)
+
+#run k-means analysis
+k1 <- 8
+km1 <- kmeans(final, centers = k1, nstart = 10)
+clusters <- data.table(npi = npi, cluster = as.factor(km1$cluster))
+
+centers <- data.frame(cluster = factor(1:k1), km1$centers)
+centers <- data.frame(t(centers ))
+for(i in 1:ncol(centers)) {
+  centers[, i] <- as.numeric(as.character(centers[, i]))
+}
+colnames(centers) <- paste("Cluster", c(1:k1))
+centers$Symbol <- row.names(centers)
+centers <- gather(centers, "Cluster", "Mean", -Symbol)
+centers$Color = centers$Mean > 0
+centers <- subset(centers, Symbol != "cluster")
+
+#function to view the details of different clusters. x = the cluster number to view (e.g., 1)
+cluster_details <- function(x) {
+  t <- ca[npi %in% clusters[cluster == x]$npi]
+  print(paste0("Number of unique NPIs: ", nrow(t[which(!duplicated(t$npi))])))
+  print(c(t[which(!duplicated(t$npi))]$npi))
+  print(t)
+}
+
+#function to view the HCPCS code utilization differences between the different clusters, displaying only the HCPCS codes of the focal cluster.
+# x = the cluster number to view
+# y = the variable to display (e.g., "lines_per_bene")
+cluster_chart <- function(x, y) {
+  t <- ca[npi %in% clusters[cluster == x]$npi]$hcpcs_code
+  u <- centers[grepl(paste(t, collapse = "|"), centers$Symbol) == TRUE & grepl(y, centers$Symbol) == TRUE, ]
+  u$hcpcs <- as.character(unique(unlist(regmatches(u$Symbol, gregexpr("[0-9]+", u$Symbol)))))
+  v <- ggplot(u, aes(x = hcpcs, y = Mean, fill = Color)) +
+    geom_bar(stat = 'identity', position = "identity", width = .75) +
+    facet_grid(Cluster ~ .) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          legend.position = "none") +
+    labs(list(y = "Normalized Means",
+              title = paste0("Normalized Means Comparison of HCPCS Code ", y, 
+                             " Belonging to Cluster ", x, 
+                             " of ", ca[which(!duplicated(ca$provider_type))]$provider_type, " Providers")))
+  print(v)
+}
+
+cluster_chart(which.max(km1$size), "lines_per_bene")
+
+cluster_sizes <- data.frame(cluster = c(1:length(km1$size)),
+                            provider_count = km1$size)
+print(cluster_sizes, row.names = FALSE)
