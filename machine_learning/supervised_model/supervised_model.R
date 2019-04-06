@@ -38,7 +38,7 @@ if (file.exists(data_path)) {
 
 
 ##################################################################################################
-# Download and read the 'loan.csv' file to memory
+# Download and read the 'loan_data.csv' AWS s3 object to memory
 ##################################################################################################
 
 set.seed(32541)
