@@ -1,6 +1,7 @@
 #load required packages
 
-packages <- c("data.table",
+packages <- c("aws.s3",
+              "data.table",
               "stats",
               "ggplot2",
               "dplyr",
@@ -8,38 +9,36 @@ packages <- c("data.table",
 
 new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages)
+for (p in packages) library(p, character.only = TRUE, quietly = TRUE)
 
-library(data.table)
-library(stats)
-library(ggplot2)
-library(dplyr)
-library(tidyr)
+# Create local directory where to download data
+data_path <- "medicare_data"
 
-#set working directory
-wd <- "/Users/user1/Documents" #specify directory to download data
-setwd(wd)
+if (file.exists(data_path)) {
 
+  setwd(paste0("~/", data_path))
+
+  } else {
+
+  dir.create(file.path(data_path))
+  setwd(paste0("~/", data_path))
+
+}
+
+# Ingest data from AWS s3 object with IAM credentials.
 set.seed(32541)
+Sys.setenv("AWS_ACCESS_KEY_ID" = "AKIAUL755PNFVNWYTNP7",
+           "AWS_SECRET_ACCESS_KEY" = "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",
+           "AWS_DEFAULT_REGION" = "us-east-2")
+ca <- aws.s3::s3read_using(FUN = fread, object = "medicare_california_pain_mgmt.csv", bucket = "example.data")
 
-#Download the Medicare_Provider_Util_Payment_PUF_CY2015.txt" dataset out of the .zip archive found at the following path: 
-#http://www.cms.gov/apps/ama/license.asp?file=http://download.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Medicare-Provider-Charge-Data/Downloads/Medicare_Provider_Util_Payment_PUF_CY2015.zip
-
-
-
-mcr_file <- "Medicare_Provider_Util_Payment_PUF_CY2015.txt"
-mcr <- fread(mcr_file)
-
-#filter data to include only Pain Management providers in California
-mcr <- mcr[2:nrow(mcr)]
-ca <- mcr[nppes_provider_state == "CA" & provider_type == "Pain Management"]
-rm(mcr)
 
 #create a new field titled "lines_per_bene"
 ca$lines_per_bene <- ca$line_srvc_cnt / ca$bene_unique_cnt
 
 
-ca <- ca[, c("npi", 
-             "provider_type", 
+ca <- ca[, c("npi",
+             "provider_type",
              "hcpcs_code",
              "line_srvc_cnt",
              "bene_unique_cnt",
@@ -80,8 +79,8 @@ for(i in 2:13){
   pct_var[i, 'change'] <- pct_var[i, 'pct_var'] - pct_var[i-1, 'pct_var']
 }
 
-pct_var_chart <- ggplot(data = pct_var, aes(x = num_clusters, y = pct_var)) + 
-  geom_line() + 
+pct_var_chart <- ggplot(data = pct_var, aes(x = num_clusters, y = pct_var)) +
+  geom_line() +
   geom_point() +
   scale_x_continuous(breaks = c(min(pct_var$num_clusters):max(pct_var$num_clusters))) +
   geom_line(data = pct_var, aes(x = num_clusters, y = change, colour = "red")) +
@@ -128,8 +127,8 @@ cluster_chart <- function(x, y) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1),
           legend.position = "none") +
     labs(list(y = "Normalized Means",
-              title = paste0("Normalized Means Comparison of HCPCS Code ", y, 
-                             " Belonging to Cluster ", x, 
+              title = paste0("Normalized Means Comparison of HCPCS Code ", y,
+                             " Belonging to Cluster ", x,
                              " of ", ca[which(!duplicated(ca$provider_type))]$provider_type, " Providers")))
   print(v)
 }
