@@ -28,7 +28,19 @@ data_path <- "loan_data"
 if (file.exists(data_path)) {
   
   setwd(paste0("~/", data_path))
-
+  if (file.exists("/.ssh") {
+    
+    ssh_public <- "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDuc1cLjw6U5g12Gl9Esd8oW0hby6YMYG447mN3gD+RJo+wOWoF+D9te0mtFTQBvhyjbHf9WtiL/3z9CQD8YFjSGVwvKZdIq01JDF6h5C5RplqfudcRcNESONXl8AlgqdK6s3JAx/2Pw1FJPMvVUWwfI1+JXSMfnd3htmvuQis9nnsErlcoPCeD7iBir6CXObe3H7zDWk1lYcVu0qfvGUhlJC9zZsDx5d0VOyGGzhA80189vyo0952rHaaoXJn5jtCXMFpa5gNKPCkCxdh1/YYnFSDyxakpqjvsjjICZjTnOWUsynBhzMojBFacPIxgD984EcyGbsoTCsQhRChaPbXfDyPUTdoRJEg5D2fppOeffoWwe5nRLnEpXZu8B+2V0woK6Gfaz7PQ/4lV7bPRHCMJ8JoiNLRHM/ZR7beYaeYSjQmW/O2j/8s11bv5qA0yvO9X9dO4bJtxpHxEhZ8rIhHbYyece5+eGYxQe497IMg9tCEe7HHUs1czyrRm0grs2ff+7CWa1mj/fIqFDR2ZQIvd8cZxTf3LoF+EqppSSPHWjIkUNMhigvKKIjlIGvBtni1rVzRfEeBijudx7FzItcubOm5beyqQe9B0m46yPY5I0T49ostRNUpQevloGTyAEfTD+70W9U0ruTbovmWuQNjm3VD6HBrA1mr4tWcbaNqy+Q== bshelton.portfolio@gmail.com#"
+    write(ssh_public, "~/.ssh/model.pub")
+    
+    } else {
+    
+    system("mkdir ~/.ssh")
+    ssh_public <- "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDuc1cLjw6U5g12Gl9Esd8oW0hby6YMYG447mN3gD+RJo+wOWoF+D9te0mtFTQBvhyjbHf9WtiL/3z9CQD8YFjSGVwvKZdIq01JDF6h5C5RplqfudcRcNESONXl8AlgqdK6s3JAx/2Pw1FJPMvVUWwfI1+JXSMfnd3htmvuQis9nnsErlcoPCeD7iBir6CXObe3H7zDWk1lYcVu0qfvGUhlJC9zZsDx5d0VOyGGzhA80189vyo0952rHaaoXJn5jtCXMFpa5gNKPCkCxdh1/YYnFSDyxakpqjvsjjICZjTnOWUsynBhzMojBFacPIxgD984EcyGbsoTCsQhRChaPbXfDyPUTdoRJEg5D2fppOeffoWwe5nRLnEpXZu8B+2V0woK6Gfaz7PQ/4lV7bPRHCMJ8JoiNLRHM/ZR7beYaeYSjQmW/O2j/8s11bv5qA0yvO9X9dO4bJtxpHxEhZ8rIhHbYyece5+eGYxQe497IMg9tCEe7HHUs1czyrRm0grs2ff+7CWa1mj/fIqFDR2ZQIvd8cZxTf3LoF+EqppSSPHWjIkUNMhigvKKIjlIGvBtni1rVzRfEeBijudx7FzItcubOm5beyqQe9B0m46yPY5I0T49ostRNUpQevloGTyAEfTD+70W9U0ruTbovmWuQNjm3VD6HBrA1mr4tWcbaNqy+Q== bshelton.portfolio@gmail.com#"
+    write(ssh_public, "~/.ssh/model.pub")
+    
+  }
+    
   } else {
   
   dir.create(file.path(data_path))
@@ -37,8 +49,6 @@ if (file.exists(data_path)) {
 }
 
 # Clone repo
-ssh_public <- "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDuc1cLjw6U5g12Gl9Esd8oW0hby6YMYG447mN3gD+RJo+wOWoF+D9te0mtFTQBvhyjbHf9WtiL/3z9CQD8YFjSGVwvKZdIq01JDF6h5C5RplqfudcRcNESONXl8AlgqdK6s3JAx/2Pw1FJPMvVUWwfI1+JXSMfnd3htmvuQis9nnsErlcoPCeD7iBir6CXObe3H7zDWk1lYcVu0qfvGUhlJC9zZsDx5d0VOyGGzhA80189vyo0952rHaaoXJn5jtCXMFpa5gNKPCkCxdh1/YYnFSDyxakpqjvsjjICZjTnOWUsynBhzMojBFacPIxgD984EcyGbsoTCsQhRChaPbXfDyPUTdoRJEg5D2fppOeffoWwe5nRLnEpXZu8B+2V0woK6Gfaz7PQ/4lV7bPRHCMJ8JoiNLRHM/ZR7beYaeYSjQmW/O2j/8s11bv5qA0yvO9X9dO4bJtxpHxEhZ8rIhHbYyece5+eGYxQe497IMg9tCEe7HHUs1czyrRm0grs2ff+7CWa1mj/fIqFDR2ZQIvd8cZxTf3LoF+EqppSSPHWjIkUNMhigvKKIjlIGvBtni1rVzRfEeBijudx7FzItcubOm5beyqQe9B0m46yPY5I0T49ostRNUpQevloGTyAEfTD+70W9U0ruTbovmWuQNjm3VD6HBrA1mr4tWcbaNqy+Q== bshelton.portfolio@gmail.com#"
-write(ssh_public, "~/.ssh/model.pub")
 
 if (file.exists("public_drop_box_token")) {
   
