@@ -137,4 +137,4 @@ cluster_chart(which.max(km1$size), "lines_per_bene")
 
 cluster_sizes <- data.frame(cluster = c(1:length(km1$size)),
                             provider_count = km1$size)
-print(cluster_sizes, row.names = FALSE)
+print(cluster_sizes)
