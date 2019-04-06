@@ -4,13 +4,13 @@
 ##################################################################################################
 
 # Install and load required packages
-packages <- c("rdrop2", 
-              "data.table", 
-              "dummies", 
-              "caret", 
-              "FNN", 
-              "pROC", 
-              "rpart", 
+packages <- c("rdrop2",
+              "data.table",
+              "dummies",
+              "caret",
+              "FNN",
+              "pROC",
+              "rpart",
               "rpart.plot",
               "Matrix",
               "xgboost",
@@ -22,47 +22,35 @@ if (length(new_packages)) install.packages(new_packages)
 for (p in packages) library(p, character.only = TRUE, quietly = TRUE)
 
 
-# Create local directory to download data
+# Create local directory where to download data
 data_path <- "loan_data"
 
 if (file.exists(data_path)) {
-  
+
   setwd(paste0("~/", data_path))
-  if (file.exists("/.ssh")) {
-    
-    ssh_public <- "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDuc1cLjw6U5g12Gl9Esd8oW0hby6YMYG447mN3gD+RJo+wOWoF+D9te0mtFTQBvhyjbHf9WtiL/3z9CQD8YFjSGVwvKZdIq01JDF6h5C5RplqfudcRcNESONXl8AlgqdK6s3JAx/2Pw1FJPMvVUWwfI1+JXSMfnd3htmvuQis9nnsErlcoPCeD7iBir6CXObe3H7zDWk1lYcVu0qfvGUhlJC9zZsDx5d0VOyGGzhA80189vyo0952rHaaoXJn5jtCXMFpa5gNKPCkCxdh1/YYnFSDyxakpqjvsjjICZjTnOWUsynBhzMojBFacPIxgD984EcyGbsoTCsQhRChaPbXfDyPUTdoRJEg5D2fppOeffoWwe5nRLnEpXZu8B+2V0woK6Gfaz7PQ/4lV7bPRHCMJ8JoiNLRHM/ZR7beYaeYSjQmW/O2j/8s11bv5qA0yvO9X9dO4bJtxpHxEhZ8rIhHbYyece5+eGYxQe497IMg9tCEe7HHUs1czyrRm0grs2ff+7CWa1mj/fIqFDR2ZQIvd8cZxTf3LoF+EqppSSPHWjIkUNMhigvKKIjlIGvBtni1rVzRfEeBijudx7FzItcubOm5beyqQe9B0m46yPY5I0T49ostRNUpQevloGTyAEfTD+70W9U0ruTbovmWuQNjm3VD6HBrA1mr4tWcbaNqy+Q== bshelton.portfolio@gmail.com#"
-    write(ssh_public, "~/.ssh/model.pub")
-    
-    } else {
-    
-    system("mkdir ~/.ssh")
-    ssh_public <- "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDuc1cLjw6U5g12Gl9Esd8oW0hby6YMYG447mN3gD+RJo+wOWoF+D9te0mtFTQBvhyjbHf9WtiL/3z9CQD8YFjSGVwvKZdIq01JDF6h5C5RplqfudcRcNESONXl8AlgqdK6s3JAx/2Pw1FJPMvVUWwfI1+JXSMfnd3htmvuQis9nnsErlcoPCeD7iBir6CXObe3H7zDWk1lYcVu0qfvGUhlJC9zZsDx5d0VOyGGzhA80189vyo0952rHaaoXJn5jtCXMFpa5gNKPCkCxdh1/YYnFSDyxakpqjvsjjICZjTnOWUsynBhzMojBFacPIxgD984EcyGbsoTCsQhRChaPbXfDyPUTdoRJEg5D2fppOeffoWwe5nRLnEpXZu8B+2V0woK6Gfaz7PQ/4lV7bPRHCMJ8JoiNLRHM/ZR7beYaeYSjQmW/O2j/8s11bv5qA0yvO9X9dO4bJtxpHxEhZ8rIhHbYyece5+eGYxQe497IMg9tCEe7HHUs1czyrRm0grs2ff+7CWa1mj/fIqFDR2ZQIvd8cZxTf3LoF+EqppSSPHWjIkUNMhigvKKIjlIGvBtni1rVzRfEeBijudx7FzItcubOm5beyqQe9B0m46yPY5I0T49ostRNUpQevloGTyAEfTD+70W9U0ruTbovmWuQNjm3VD6HBrA1mr4tWcbaNqy+Q== bshelton.portfolio@gmail.com#"
-    write(ssh_public, "~/.ssh/model.pub")
-    
-  }
-    
+
   } else {
-  
+
   dir.create(file.path(data_path))
   setwd(paste0("~/", data_path))
-  
+
 }
 
-# Clone repo
+# Clone repo where the Dropbox .rds auth token is stored
 
 if (file.exists("public_drop_box_token")) {
-  
+
   setwd("public_drop_box_token")
   token <- readRDS("token.rds")
   drop_dir(dtoken = token)
-  
+
 } else {
-  
+
   system("git clone https://github.com/b-shelton/public_drop_box_token")
   setwd("public_drop_box_token")
   token <- readRDS("token.rds")
   drop_dir(dtoken = token)
-  
+
 }
 
 
@@ -74,7 +62,7 @@ drop_download('loan.csv')
 
 set.seed(32541)
 
-#Download the loan.csv file out of the .zip archive found at the following path to access the "loan.csv" dataset: 
+#Download the loan.csv file out of the .zip archive found at the following path to access the "loan.csv" dataset:
 #https://www.kaggle.com/wendykan/lending-club-loan-data/downloads/lending-club-loan-data.zip
 
 loans <- fread("loan.csv")
@@ -116,7 +104,7 @@ loans1 <- loans[loan_status %in% c("Charged Off", "Fully Paid"), c("dti",
                                                                    "application_type")]
 
 #one hot encode the categorical variables
-loans2 <- data.table(dummy.data.frame(loans1, 
+loans2 <- data.table(dummy.data.frame(loans1,
                                       names = c("purpose",
                                                 "home_ownership",
                                                 "grade",
@@ -124,7 +112,7 @@ loans2 <- data.table(dummy.data.frame(loans1,
                                                 "term",
                                                 "addr_state",
                                                 "verification_status",
-                                                "application_type"), 
+                                                "application_type"),
                                       sep = "_"))
 
 
@@ -135,15 +123,15 @@ test.a <- loans2[!train_index]
 
 
 #knnImputation of missing values
-pre_obj <- preProcess(train.a[, -c("loan_status")], 
+pre_obj <- preProcess(train.a[, -c("loan_status")],
                       method = "knnImpute")
 system.time(
-  train_imp <- predict(pre_obj, 
+  train_imp <- predict(pre_obj,
                      train.a[, -c("loan_status")])
 )
 
 system.time(
-test_imp <- predict(pre_obj, 
+test_imp <- predict(pre_obj,
                     test.a[, -c("loan_status")])
 )
 
@@ -169,7 +157,7 @@ train_pca <- predict(pre_pca, train)
 test_pca <- predict(pre_pca, test)
 
 train_pca2 <- cbind(train_pca, ifelse(train.a$loan_status == "Charged Off", 1, 0))
-colnames(train_pca2) <- c(colnames(train_pca), "loan_status") 
+colnames(train_pca2) <- c(colnames(train_pca), "loan_status")
 
 #train PCA logistic regression model
 logit_model <- glm(formula = loan_status ~ ., family = binomial(link = "logit"), data = train_pca2)
@@ -236,16 +224,16 @@ customRF$levels <- function(x) x$classes
 
 
 #train the random forest model
-fitControl <- trainControl(method="cv", 
+fitControl <- trainControl(method="cv",
                            number=3,
                            allowParallel = TRUE)
 
 tunegrid <- expand.grid(.mtry=c(9:18), .ntree=c(50, 75, 100))
 
 system.time(
-  rf_model <- train(as.factor(loan_status) ~ ., 
-                     method = customRF, 
-                     data = train2, 
+  rf_model <- train(as.factor(loan_status) ~ .,
+                     method = customRF,
+                     data = train2,
                      trControl = fitControl,
                      tuneGrid = tunegrid,
                      metric = 'Kappa')
@@ -266,7 +254,7 @@ rf_roc <- roc(rf_labels, rf_predictions)
 rf_auc <- auc(rf_roc)
 
 #plot the top 20 most importance variables in the RF model
-var_imp_plot <- plot(varImp(rf_model, scale = FALSE), top = 20) 
+var_imp_plot <- plot(varImp(rf_model, scale = FALSE), top = 20)
 print(var_imp_plot)
 
 
@@ -315,12 +303,12 @@ cats <- rbind(cats[train_index],
 cats$account <- c(1:nrow(cats))
 
 #identify unique categorical feature values for each account (record)
-d1 <- cats[,list(account, purpose)] 
-d2 <- cats[,list(account, home_ownership)] 
-d3 <- cats[, list(account, grade)] 
+d1 <- cats[,list(account, purpose)]
+d2 <- cats[,list(account, home_ownership)]
+d3 <- cats[, list(account, grade)]
 d4 <- cats[, list(account, emp_length)]
-d5 <- cats[, list(account, term)] 
-d6 <- cats[, list(account, addr_state)] 
+d5 <- cats[, list(account, term)]
+d6 <- cats[, list(account, addr_state)]
 d7 <- cats[, list(account, verification_status)]
 d8 <- cats[, list(account, application_type)]
 
@@ -365,7 +353,7 @@ trwr <- sample(1:nrow(train_data), round(.85*nrow(train_data), 0), replace = FAL
 trw_data <- train_data[trwr, ]
 tew_data <- train_data[-trwr, ]
 
-test_data <- M[(nrow(train.a)+1):nrow(M), ] 
+test_data <- M[(nrow(train.a)+1):nrow(M), ]
 
 trw_label <- ifelse(train.a[trwr, ]$loan_status == "Charged Off", 1, 0)
 tew_label <- ifelse(train.a[-trwr, ]$loan_status == "Charged Off", 1, 0)
@@ -415,19 +403,19 @@ results <- data.frame(cbind(rbind(logit_auc,
                                   dtree_spec,
                                   rf_spec,
                                   gb_spec)))
-rownames(results) <- c("Logistic Regression w/ PCA", 
-                       "Decision Tree", 
-                       "Random Forest", 
+rownames(results) <- c("Logistic Regression w/ PCA",
+                       "Decision Tree",
+                       "Random Forest",
                        "Gradient Boosting")
-colnames(results) <- c("AUC", 
-                       "Sensitivity", 
+colnames(results) <- c("AUC",
+                       "Sensitivity",
                        "Specificity")
 results <- results[order(-results$AUC), ]
 
 results_viz <- melt(results)
 results_viz$model <- rep(row.names(results), 3)
-viz_comparison <- ggplot(results_viz, aes(x = model, y = value, fill = model)) + 
-  geom_bar(stat = "identity") + 
+viz_comparison <- ggplot(results_viz, aes(x = model, y = value, fill = model)) +
+  geom_bar(stat = "identity") +
   facet_grid(variable ~ .) +
   coord_flip() +
   scale_x_discrete(limits = rev(row.names(results))) +
@@ -438,5 +426,3 @@ viz_comparison <- ggplot(results_viz, aes(x = model, y = value, fill = model)) +
 
 print(viz_comparison)
 print(round(results, 3))
-
-  
