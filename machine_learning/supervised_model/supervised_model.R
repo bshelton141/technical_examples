@@ -52,6 +52,8 @@ loans1 <- aws.s3::s3read_using(FUN = fread, object = "loan_data.csv", bucket = "
 # Perform Data Pre-Processing
 ##################################################################################################
 
+loans1$V1 <- NULL
+
 #one hot encode the categorical variables
 loans2 <- data.table(dummy.data.frame(loans1,
                                       names = c("purpose",
