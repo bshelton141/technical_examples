@@ -21,6 +21,19 @@ new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
 if (length(new_packages)) install.packages(new_packages)
 for (p in packages) library(p, character.only = TRUE, quietly = TRUE)
 
+# Create location to output the visual results
+data_path <- "loan_model_results"
+if (file.exists(data_path)) {
+
+  setwd(paste0("~/", data_path))
+
+  } else {
+
+  dir.create(file.path(data_path))
+  setwd(paste0("~/", data_path))
+
+}
+
 
 ##################################################################################################
 # Download and read the 'loan_data.csv' AWS s3 object to memory
@@ -39,7 +52,7 @@ loans1 <- aws.s3::s3read_using(FUN = fread, object = "loan_data.csv", bucket = "
 
 loans1$V1 <- NULL
 
-#one hot encode the categorical variables
+# One hot encode the categorical variables
 loans2 <- data.table(dummy.data.frame(loans1,
                                       names = c("purpose",
                                                 "home_ownership",
@@ -52,7 +65,7 @@ loans2 <- data.table(dummy.data.frame(loans1,
                                       sep = "_"))
 
 
-#split the data into train and test sets
+# Split the data into train and test sets
 train_index <- createDataPartition(y = loans2$loan_status, p = 0.7, list = FALSE)
 train.a <- loans2[train_index]
 test.a <- loans2[!train_index]
@@ -78,7 +91,7 @@ test <- data.frame(test_vars)
 rm(loans1, loans2, train_vars, test_vars, train_means)
 
 
-#remove all zero-variance and near-zero-variane variables from data
+# Remove all zero-variance and near-zero-variane variables from data
 nzvar <- subset(nearZeroVar(train, saveMetrics = TRUE), nzv == TRUE & percentUnique < .5)
 `%ni%` <- Negate(`%in%`)
 train <- train[, names(train) %ni% rownames(nzvar)]
@@ -86,7 +99,7 @@ test <- test[, names(test) %ni% rownames(nzvar)]
 
 
 ##################################################################################################
-#Logistic Regression Model
+# Logistic Regression Model
 ##################################################################################################
 
 #transform predictor variables to principle components
@@ -114,7 +127,7 @@ logit_auc <- auc(logit_roc)
 
 
 ##################################################################################################
-#Decision Tree Model
+# Decision Tree Model
 ##################################################################################################
 
 train2 <- cbind(train, train.a$loan_status)
@@ -124,15 +137,17 @@ colnames(train2) <- c(colnames(train), "loan_status")
 control_param <- rpart.control(cp = .005)
 dtree_model <- rpart(loan_status ~ ., data = train2, control = control_param)
 
+jpg('decision_tree_specs.jpg')
 rpart.plot(dtree_model) #visualizes the decision tree
+dev.off()
 
 dtree_pred <- data.frame(predict(dtree_model, newdata = test)) #apply trained decision tree model to test data
 
 dtree_pred$fin <- as.vector(pmax(dtree_pred[, 1], dtree_pred[ ,2]))
 prediction.tree1 <- as.factor(ifelse(dtree_pred$fin == dtree_pred[, 1], "Charged Off", "Fully Paid"))
 dtree_cm <- confusionMatrix(prediction.tree1, test.a$loan_status)
-dtree_sens <- sensitivity(prediction.tree1, as.factor(test$loan_status))
-dtree_spec <- specificity(prediction.tree1, as.factor(test$loan_status))
+dtree_sens <- sensitivity(prediction.tree1, as.factor(test.a$loan_status))
+dtree_spec <- specificity(prediction.tree1, as.factor(test.a$loan_status))
 
 dtree_labels <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
 dtree_predictions <- ifelse(prediction.tree1 == "Charged Off", 1, 0)
@@ -141,7 +156,7 @@ dtree_auc <- auc(dtree_roc)
 
 
 ##################################################################################################
-#Random Forest with a custom model to test different combinations of mtry and ntree values
+# Random Forest with a custom model to test different combinations of mtry and ntree values
 ##################################################################################################
 
 #create custom model for multiple mtry and ntree values
@@ -158,13 +173,12 @@ customRF$prob <- function(modelFit, newdata, preProc = NULL, submodels = NULL)
 customRF$sort <- function(x) x[order(x[,1]),]
 customRF$levels <- function(x) x$classes
 
-
 #train the random forest model
 fitControl <- trainControl(method="cv",
                            number=3,
                            allowParallel = TRUE)
 
-tunegrid <- expand.grid(.mtry=c(8:10), .ntree=c(50, 60, 75))
+tunegrid <- expand.grid(.mtry=c(3:4), .ntree=c(15, 20))
 
 system.time(
   rf_model <- train(as.factor(loan_status) ~ .,
@@ -176,8 +190,9 @@ system.time(
 )
 
 print(rf_model) #print the trained model summary
-train_plot <- plot(rf_model) #plot the Kappa scores for the different ntree and mtry combinations
-print(train_plot)
+jpg("rf_tuning_grid_results.jpg")
+plot(rf_model) #plot the Kappa scores for the different ntree and mtry combinations
+dev.off()
 
 rf_pred <- predict(rf_model, test) #apply trained random forest model to test data
 rf_cm <- confusionMatrix(rf_pred, test.a$loan_status)
@@ -190,16 +205,16 @@ rf_roc <- roc(rf_labels, rf_predictions)
 rf_auc <- auc(rf_roc)
 
 #plot the top 20 most importance variables in the RF model
-var_imp_plot <- plot(varImp(rf_model, scale = FALSE), top = 20)
-print(var_imp_plot)
+jpg("rf_variable_importance.jpg")
+plot(varImp(rf_model, scale = FALSE), top = 20)
+dev.off()
 
 
 ##################################################################################################
-#Gradient Boosting Model
+# Gradient Boosting Model
 ##################################################################################################
 
 #create sparse matrix for numeric predictors
-#################################################
 M.a <- sparse.model.matrix(~ dti +
                              annual_inc +
                              delinq_2yrs +
@@ -209,8 +224,6 @@ M.a <- sparse.model.matrix(~ dti +
                              revol_bal +
                              revol_util +
                              total_acc +
-                             out_prncp +
-                             out_prncp_inv +
                              total_pymnt +
                              total_pymnt_inv +
                              total_rec_prncp +
@@ -218,20 +231,18 @@ M.a <- sparse.model.matrix(~ dti +
                              total_rec_late_fee +
                              recoveries +
                              collection_recovery_fee +
-                             last_pymnt_amnt +
-                             collections_12_mths_ex_med -1, data = rbind(train_imp, test_imp))
+                             last_pymnt_amnt  -1, data = rbind(train, test))
 
 
 #create sparse matrix for categorical predictors
-#################################################
-cats <- loans[loan_status %in% c("Charged Off", "Fully Paid"), c("purpose",
-                                                                 "home_ownership",
-                                                                 "grade",
-                                                                 "emp_length",
-                                                                 "term",
-                                                                 "addr_state",
-                                                                 "verification_status",
-                                                                 "application_type")]
+cats <- loans1[loan_status %in% c("Charged Off", "Fully Paid"), c("purpose",
+                                                                  "home_ownership",
+                                                                  "grade",
+                                                                  "emp_length",
+                                                                  "term",
+                                                                  "addr_state",
+                                                                  "verification_status",
+                                                                  "application_type")]
 #reorder to stack train data on top of test data
 cats <- rbind(cats[train_index],
               cats[!train_index])
@@ -305,7 +316,7 @@ watchlist <- list(train = dtrain_tr, test = dtrain_te)
 bst <- xgb.train(data = dtrain_tr,
                  watchlist = watchlist,
                  eta = .1,
-                 nround = 200,
+                 nround = 50,
                  objective = "binary:logistic",
                  eval_metric = "auc")
 
@@ -323,7 +334,7 @@ gb_auc <- auc(gb_roc)
 
 
 ##################################################################################################
-#Compare the ability of the five different models to predict the outcomes of the test set
+# Compare the ability of the four different models to predict the outcomes of the test set
 ##################################################################################################
 
 results <- data.frame(cbind(rbind(logit_auc,
@@ -347,9 +358,11 @@ colnames(results) <- c("AUC",
                        "Specificity")
 results <- results[order(-results$AUC), ]
 
-results_viz <- melt(results)
+results2 <- cbind(results, row.names(results))
+colnames(results2) <- c("AUC", "Sensitivity", "Specificty", "Model")
+results_viz <- melt(results2, id = "Model")
 results_viz$model <- rep(row.names(results), 3)
-viz_comparison <- ggplot(results_viz, aes(x = model, y = value, fill = model)) +
+viz_comparison <- ggplot(results_viz, aes(x = Model, y = value, fill = model)) +
   geom_bar(stat = "identity") +
   facet_grid(variable ~ .) +
   coord_flip() +
@@ -360,4 +373,6 @@ viz_comparison <- ggplot(results_viz, aes(x = model, y = value, fill = model)) +
   labs(title = "Predictive Model Comparisons")
 
 print(viz_comparison)
+ggsave("model_performance_comparisons.jpg")
+
 print(round(results, 3))
