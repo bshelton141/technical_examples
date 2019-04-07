@@ -72,12 +72,11 @@ for (col in colnames(test_vars)) {
   test_vars[is.na(test_vars[,col]), col] <- train_means[col]
 }
 
-train <- data.frame(train.a$loan_status, train_vars)
-colnames(train)[1] <- "loan_status"
-test <- data.frame(test.a$loan_status, test_vars)
+train <- data.frame(train_vars)
+test <- data.frame(test_vars)
 colnames(test)[1] <- "loan_status"
 
-rm(loans1, loans2, train.a, train_vars, test.a, test_vars, train_means)
+rm(loans1, loans2, train_vars, test_vars, train_means)
 
 
 #remove all zero-variance and near-zero-variane variables from data
@@ -96,7 +95,7 @@ pre_pca <- preProcess(train, method = "pca")
 train_pca <- predict(pre_pca, train)
 test_pca <- predict(pre_pca, test)
 
-train_pca2 <- cbind(train_pca, ifelse(train$loan_status == "Charged Off", 1, 0))
+train_pca2 <- cbind(train_pca, ifelse(train.a$loan_status == "Charged Off", 1, 0))
 colnames(train_pca2) <- c(colnames(train_pca), "loan_status")
 
 #train PCA logistic regression model
@@ -105,11 +104,11 @@ logit_model <- glm(formula = loan_status ~ ., family = binomial(link = "logit"),
 logit_pred <- predict(logit_model, newdata = test_pca, type = "response") #apply trained PCA logistic regression model to test data
 
 prediction_logit <- as.factor(ifelse(logit_pred >= .5, "Charged Off", "Fully Paid"))
-logit_cm <- confusionMatrix(prediction_logit, test$loan_status)
-logit_sens <- sensitivity(prediction_logit, as.factor(test$loan_status))
-logit_spec <- specificity(prediction_logit, as.factor(test$loan_status))
+logit_cm <- confusionMatrix(prediction_logit, test.a$loan_status)
+logit_sens <- sensitivity(prediction_logit, as.factor(test.a$loan_status))
+logit_spec <- specificity(prediction_logit, as.factor(test.a$loan_status))
 
-logit_labels <- ifelse(test$loan_status == "Charged Off", 1, 0)
+logit_labels <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
 logit_predictions <- ifelse(prediction_logit == "Charged Off", 1, 0)
 logit_roc <- roc(logit_labels, logit_predictions)
 logit_auc <- auc(logit_roc)
@@ -119,7 +118,7 @@ logit_auc <- auc(logit_roc)
 #Decision Tree Model
 ##################################################################################################
 
-train2 <- cbind(train, train$loan_status)
+train2 <- cbind(train, train.a$loan_status)
 colnames(train2) <- c(colnames(train), "loan_status")
 
 #train decision tree model
@@ -132,11 +131,11 @@ dtree_pred <- data.frame(predict(dtree_model, newdata = test)) #apply trained de
 
 dtree_pred$fin <- as.vector(pmax(dtree_pred[, 1], dtree_pred[ ,2]))
 prediction.tree1 <- as.factor(ifelse(dtree_pred$fin == dtree_pred[, 1], "Charged Off", "Fully Paid"))
-dtree_cm <- confusionMatrix(prediction.tree1, test$loan_status)
+dtree_cm <- confusionMatrix(prediction.tree1, test.a$loan_status)
 dtree_sens <- sensitivity(prediction.tree1, as.factor(test$loan_status))
 dtree_spec <- specificity(prediction.tree1, as.factor(test$loan_status))
 
-dtree_labels <- ifelse(test$loan_status == "Charged Off", 1, 0)
+dtree_labels <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
 dtree_predictions <- ifelse(prediction.tree1 == "Charged Off", 1, 0)
 dtree_roc <- roc(dtree_labels, dtree_predictions)
 dtree_auc <- auc(dtree_roc)
@@ -182,11 +181,11 @@ train_plot <- plot(rf_model) #plot the Kappa scores for the different ntree and 
 print(train_plot)
 
 rf_pred <- predict(rf_model, test) #apply trained random forest model to test data
-rf_cm <- confusionMatrix(rf_pred, test$loan_status)
-rf_sens <- sensitivity(rf_pred, as.factor(test$loan_status))
-rf_spec <- specificity(rf_pred, as.factor(test$loan_status))
+rf_cm <- confusionMatrix(rf_pred, test.a$loan_status)
+rf_sens <- sensitivity(rf_pred, as.factor(test.a$loan_status))
+rf_spec <- specificity(rf_pred, as.factor(test.a$loan_status))
 
-rf_labels <- ifelse(test$loan_status == "Charged Off", 1, 0)
+rf_labels <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
 rf_predictions <- ifelse(rf_pred == "Charged Off", 1, 0)
 rf_roc <- roc(rf_labels, rf_predictions)
 rf_auc <- auc(rf_roc)
@@ -292,9 +291,9 @@ tew_data <- train_data[-trwr, ]
 
 test_data <- M[(nrow(train)+1):nrow(M), ]
 
-trw_label <- ifelse(train[trwr, ]$loan_status == "Charged Off", 1, 0)
-tew_label <- ifelse(train[-trwr, ]$loan_status == "Charged Off", 1, 0)
-test_label <- ifelse(test$loan_status == "Charged Off", 1, 0)
+trw_label <- ifelse(train.a[trwr, ]$loan_status == "Charged Off", 1, 0)
+tew_label <- ifelse(train.a[-trwr, ]$loan_status == "Charged Off", 1, 0)
+test_label <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
 
 dtrain_tr <- xgb.DMatrix(data = trw_data, label = trw_label)
 dtrain_te <- xgb.DMatrix(data = tew_data, label = tew_label)
@@ -313,11 +312,11 @@ bst <- xgb.train(data = dtrain_tr,
 
 #perform prediction
 gb_pred <- as.factor(ifelse(predict(bst, test_data) >= .5, "Charged Off", "Fully Paid")) #apply trained xgboost model to test data
-gb_cm <- confusionMatrix(gb_pred, test$loan_status)
-gb_sens <- sensitivity(gb_pred, as.factor(test$loan_status))
-gb_spec <- specificity(gb_pred, as.factor(test$loan_status))
+gb_cm <- confusionMatrix(gb_pred, test.a$loan_status)
+gb_sens <- sensitivity(gb_pred, as.factor(test.a$loan_status))
+gb_spec <- specificity(gb_pred, as.factor(test.a$loan_status))
 
-gb_labels <- ifelse(test$loan_status == "Charged Off", 1, 0)
+gb_labels <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
 gb_predictions <- ifelse(gb_pred == "Charged Off", 1, 0)
 gb_roc <- roc(gb_labels, gb_predictions)
 gb_auc <- auc(gb_roc)
