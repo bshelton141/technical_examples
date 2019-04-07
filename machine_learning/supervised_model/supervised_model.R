@@ -72,29 +72,27 @@ for (col in colnames(test_vars)) {
   test_vars[is.na(test_vars[,col]), col] <- train_means[col]
 }
 
-train <- data.frame(train.a$loan_status, train_vars)
-colnames(train)[1] <- "loan_status"
-test <- data.frame(test.a$loan_status, test_vars)
-colnames(test)[1] <- "loan_status"
+train <- data.frame(train_vars)
+test <- data.frame(test_vars)
 
-rm(loans1, loans2, train.a, train_vars, test.a, test_vars, train_means)
+rm(loans1, loans2, train_vars, test_vars, train_means)
 
 
 #remove all zero-variance and near-zero-variane variables from data
-nzvar <- subset(nearZeroVar(train, saveMetrics = TRUE), nzv ==TRUE & percentUnique < .5)
+nzvar <- subset(nearZeroVar(train, saveMetrics = TRUE), nzv == TRUE & percentUnique < .5)
 `%ni%` <- Negate(`%in%`)
 train <- train[, names(train) %ni% rownames(nzvar)]
 test <- test[, names(test) %ni% rownames(nzvar)]
 
 
 ##################################################################################################
-#Logistic Regression Model using Principle Component Analysis
+#Logistic Regression Model
 ##################################################################################################
 
 #transform predictor variables to principle components
 pre_pca <- preProcess(train, method = "pca")
 train_pca <- predict(pre_pca, train)
-test_pca <- predict(pre_pca, test)
+test_pca <- predict(pre_pca, newdata = test)
 
 train_pca2 <- cbind(train_pca, ifelse(train.a$loan_status == "Charged Off", 1, 0))
 colnames(train_pca2) <- c(colnames(train_pca), "loan_status")
@@ -133,8 +131,8 @@ dtree_pred <- data.frame(predict(dtree_model, newdata = test)) #apply trained de
 dtree_pred$fin <- as.vector(pmax(dtree_pred[, 1], dtree_pred[ ,2]))
 prediction.tree1 <- as.factor(ifelse(dtree_pred$fin == dtree_pred[, 1], "Charged Off", "Fully Paid"))
 dtree_cm <- confusionMatrix(prediction.tree1, test.a$loan_status)
-dtree_sens <- sensitivity(prediction.tree1, as.factor(test.a$loan_status))
-dtree_spec <- specificity(prediction.tree1, as.factor(test.a$loan_status))
+dtree_sens <- sensitivity(prediction.tree1, as.factor(test$loan_status))
+dtree_spec <- specificity(prediction.tree1, as.factor(test$loan_status))
 
 dtree_labels <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
 dtree_predictions <- ifelse(prediction.tree1 == "Charged Off", 1, 0)
@@ -285,12 +283,12 @@ M <- cbind(M.a, M.b)
 
 #create xgb matrices for the xgboost model
 #################################################
-train_data <- M[1:nrow(train.a), ]
+train_data <- M[1:nrow(train), ]
 trwr <- sample(1:nrow(train_data), round(.85*nrow(train_data), 0), replace = FALSE)
 trw_data <- train_data[trwr, ]
 tew_data <- train_data[-trwr, ]
 
-test_data <- M[(nrow(train.a)+1):nrow(M), ]
+test_data <- M[(nrow(train)+1):nrow(M), ]
 
 trw_label <- ifelse(train.a[trwr, ]$loan_status == "Charged Off", 1, 0)
 tew_label <- ifelse(train.a[-trwr, ]$loan_status == "Charged Off", 1, 0)
