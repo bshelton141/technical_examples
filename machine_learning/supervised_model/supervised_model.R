@@ -74,26 +74,25 @@ for (col in colnames(test_vars)) {
 
 train <- data.frame(train_vars)
 test <- data.frame(test_vars)
-colnames(test)[1] <- "loan_status"
 
 rm(loans1, loans2, train_vars, test_vars, train_means)
 
 
 #remove all zero-variance and near-zero-variane variables from data
-nzvar <- subset(nearZeroVar(train, saveMetrics = TRUE), nzv ==TRUE & percentUnique < .5)
+nzvar <- subset(nearZeroVar(train, saveMetrics = TRUE), nzv == TRUE & percentUnique < .5)
 `%ni%` <- Negate(`%in%`)
 train <- train[, names(train) %ni% rownames(nzvar)]
 test <- test[, names(test) %ni% rownames(nzvar)]
 
 
 ##################################################################################################
-#Logistic Regression Model using Principle Component Analysis
+#Logistic Regression Model
 ##################################################################################################
 
 #transform predictor variables to principle components
 pre_pca <- preProcess(train, method = "pca")
 train_pca <- predict(pre_pca, train)
-test_pca <- predict(pre_pca, test)
+test_pca <- predict(pre_pca, newdata = test)
 
 train_pca2 <- cbind(train_pca, ifelse(train.a$loan_status == "Charged Off", 1, 0))
 colnames(train_pca2) <- c(colnames(train_pca), "loan_status")
