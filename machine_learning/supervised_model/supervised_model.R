@@ -137,7 +137,7 @@ colnames(train2) <- c(colnames(train), "loan_status")
 control_param <- rpart.control(cp = .005)
 dtree_model <- rpart(loan_status ~ ., data = train2, control = control_param)
 
-jpg('decision_tree_specs.jpg')
+jpeg('decision_tree_specs.jpg')
 rpart.plot(dtree_model) #visualizes the decision tree
 dev.off()
 
@@ -190,7 +190,7 @@ system.time(
 )
 
 print(rf_model) #print the trained model summary
-jpg("rf_tuning_grid_results.jpg")
+jpeg("rf_tuning_grid_results.jpg")
 plot(rf_model) #plot the Kappa scores for the different ntree and mtry combinations
 dev.off()
 
@@ -205,7 +205,7 @@ rf_roc <- roc(rf_labels, rf_predictions)
 rf_auc <- auc(rf_roc)
 
 #plot the top 20 most importance variables in the RF model
-jpg("rf_variable_importance.jpg")
+jpeg("rf_variable_importance.jpg")
 plot(varImp(rf_model, scale = FALSE), top = 20)
 dev.off()
 
