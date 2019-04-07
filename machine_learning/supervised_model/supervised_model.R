@@ -1,6 +1,6 @@
 
 ##################################################################################################
-# Configure required environment
+# Install packages, after installing ones as necessary
 ##################################################################################################
 
 # Install and load required packages
@@ -20,21 +20,6 @@ packages <- c("aws.s3",
 new_packages <- packages[!(packages %in% installed.packages()[,"Package"])]
 if (length(new_packages)) install.packages(new_packages)
 for (p in packages) library(p, character.only = TRUE, quietly = TRUE)
-
-
-# Create local directory where to download data
-data_path <- "loan_data"
-
-if (file.exists(data_path)) {
-
-  setwd(paste0("~/", data_path))
-
-  } else {
-
-  dir.create(file.path(data_path))
-  setwd(paste0("~/", data_path))
-
-}
 
 
 ##################################################################################################
@@ -68,34 +53,38 @@ loans2 <- data.table(dummy.data.frame(loans1,
 
 
 #split the data into train and test sets
-train_index <- createDataPartition(y = loans2$loan_status, p = 0.8, list = FALSE)
+train_index <- createDataPartition(y = loans2$loan_status, p = 0.7, list = FALSE)
 train.a <- loans2[train_index]
 test.a <- loans2[!train_index]
 
 
-#knnImputation of missing values
-pre_obj <- preProcess(train.a[, -c("loan_status")],
-                      method = "knnImpute")
-system.time(
-  train_imp <- predict(pre_obj,
-                     train.a[, -c("loan_status")])
-)
+# Impute training and testing NA values with the median of the training values
+train_vars <- data.frame(train.a[, -c("loan_status")])
+test_vars <- data.frame(test.a[, -c("loan_status")])
 
-system.time(
-test_imp <- predict(pre_obj,
-                    test.a[, -c("loan_status")])
-)
+train_means <- round(apply(train_vars, 2, function(x) { mean(x, na.rm = TRUE) }))
 
-train <- data.frame(train_imp)
-test <- data.frame(test_imp)
+for (col in colnames(train_vars)) {
+  train_vars[is.na(train_vars[,col]), col] <- train_means[col]
+}
+
+for (col in colnames(test_vars)) {
+  test_vars[is.na(test_vars[,col]), col] <- train_means[col]
+}
+
+train <- data.frame(train.a$loan_status, train_vars)
+colnames(train)[1] <- "loan_status"
+test <- data.frame(test.a$loan_status, test_vars)
+colnames(test)[1] <- "loan_status"
+
+rm(loans1, loans2, train.a, train_vars, test.a, test_vars, train_means)
+
 
 #remove all zero-variance and near-zero-variane variables from data
 nzvar <- subset(nearZeroVar(train, saveMetrics = TRUE), nzv ==TRUE & percentUnique < .5)
 `%ni%` <- Negate(`%in%`)
 train <- train[, names(train) %ni% rownames(nzvar)]
 test <- test[, names(test) %ni% rownames(nzvar)]
-
-
 
 
 ##################################################################################################
@@ -126,7 +115,6 @@ logit_roc <- roc(logit_labels, logit_predictions)
 logit_auc <- auc(logit_roc)
 
 
-
 ##################################################################################################
 #Decision Tree Model
 ##################################################################################################
@@ -152,7 +140,6 @@ dtree_labels <- ifelse(test.a$loan_status == "Charged Off", 1, 0)
 dtree_predictions <- ifelse(prediction.tree1 == "Charged Off", 1, 0)
 dtree_roc <- roc(dtree_labels, dtree_predictions)
 dtree_auc <- auc(dtree_roc)
-
 
 
 ##################################################################################################
@@ -207,7 +194,6 @@ rf_auc <- auc(rf_roc)
 #plot the top 20 most importance variables in the RF model
 var_imp_plot <- plot(varImp(rf_model, scale = FALSE), top = 20)
 print(var_imp_plot)
-
 
 
 ##################################################################################################
