@@ -88,7 +88,7 @@ for (col in colnames(test_vars)) {
 train <- data.frame(train_vars)
 test <- data.frame(test_vars)
 
-rm(loans1, loans2, train_vars, test_vars, train_means)
+rm(train_vars, test_vars, train_means)
 
 
 # Remove all zero-variance and near-zero-variane variables from data
