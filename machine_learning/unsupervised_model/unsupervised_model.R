@@ -27,7 +27,7 @@ if (file.exists(data_path)) {
 
 # Ingest data from AWS s3 object.
 ca <- read.csv(url("https://s3.us-east-2.amazonaws.com/example.data/medicare_california_pain_mgmt.csv"), header = TRUE)
-
+ca <- data.table(ca)
 
 #create a new field titled "lines_per_bene"
 ca$lines_per_bene <- ca$line_srvc_cnt / ca$bene_unique_cnt
