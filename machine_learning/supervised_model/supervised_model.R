@@ -42,6 +42,7 @@ if (file.exists(data_path)) {
 
 set.seed(32541)
 loans1 <- read.csv(url("https://s3.us-east-2.amazonaws.com/example.data/loan_data.csv"), header = TRUE)
+loans1 <- data.table(loans1)
 
 
 ##################################################################################################
