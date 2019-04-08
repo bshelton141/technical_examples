@@ -12,7 +12,7 @@ if(length(new_packages)) install.packages(new_packages)
 for (p in packages) library(p, character.only = TRUE, quietly = TRUE)
 
 # Create local directory where to download data
-data_path <- "medicare_data"
+data_path <- "medicare_clustering_results"
 
 if (file.exists(data_path)) {
 
@@ -88,6 +88,7 @@ pct_var_chart <- ggplot(data = pct_var, aes(x = num_clusters, y = pct_var)) +
   labs(title = "Percentage of Variance Explained by Cluster Count (black line)")
 
 print(pct_var_chart)
+ggsave("variance_explained_by_cluster_count.jpg")
 print(pct_var)
 
 #run k-means analysis
@@ -125,12 +126,17 @@ cluster_chart <- function(x, y) {
     geom_bar(stat = 'identity', position = "identity", width = .75) +
     facet_grid(Cluster ~ .) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          axis.text.y = element_text(size = 8),
           legend.position = "none") +
     labs(list(y = "Normalized Means",
               title = paste0("Normalized Means Comparison of HCPCS Code ", y,
                              " Belonging to Cluster ", x,
                              " of ", ca[which(!duplicated(ca$provider_type))]$provider_type, " Providers")))
   print(v)
+
+  width = 700
+  height = width / 1.75
+  ggsave("cluster_variable_differences.jpg", width = width, height = height, units = "mm")
 }
 
 cluster_chart(which.max(km1$size), "lines_per_bene")
