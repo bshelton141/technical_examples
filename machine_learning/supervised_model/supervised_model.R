@@ -8,6 +8,7 @@ packages <- c("aws.s3",
               "data.table",
               "dummies",
               "caret",
+              "randomForest",
               "FNN",
               "pROC",
               "rpart",
@@ -125,6 +126,8 @@ logit_predictions <- ifelse(prediction_logit == "Charged Off", 1, 0)
 logit_roc <- roc(logit_labels, logit_predictions)
 logit_auc <- auc(logit_roc)
 
+rm(train_pca, train_pca2, test_pca)
+
 
 ##################################################################################################
 # Decision Tree Model
@@ -178,7 +181,7 @@ fitControl <- trainControl(method="cv",
                            number=3,
                            allowParallel = TRUE)
 
-tunegrid <- expand.grid(.mtry=c(3:4), .ntree=c(15, 20))
+tunegrid <- expand.grid(.mtry=c(3:4), .ntree=c(5, 8, 10))
 
 system.time(
   rf_model <- train(as.factor(loan_status) ~ .,
