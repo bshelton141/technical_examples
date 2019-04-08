@@ -115,7 +115,7 @@ cluster_details <- function(x) {
 # x = the cluster number to view
 # y = the variable to display (e.g., "lines_per_bene")
 cluster_chart <- function(x, y) {
-  t <- ca[npi %in% clusters[cluster == x]$npi]$hcpcs_code
+  t <- data.table(ca)[npi %in% clusters[cluster == x]$npi]$hcpcs_code
   u <- centers[grepl(paste(t, collapse = "|"), centers$Symbol) == TRUE & grepl(y, centers$Symbol) == TRUE, ]
   u$hcpcs <- as.character(unique(unlist(regmatches(u$Symbol, gregexpr("[0-9]+", u$Symbol)))))
   v <- ggplot(u, aes(x = hcpcs, y = Mean, fill = Color)) +
