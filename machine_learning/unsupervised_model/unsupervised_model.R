@@ -128,8 +128,8 @@ cluster_chart <- function(x, y) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1),
           axis.text.y = element_text(size = 8),
           legend.position = "none") +
-    labs(list(y = "Normalized Means",
-              title = paste0("Normalized Means Comparison of HCPCS Code ", y,
+    labs(list(y = "Standard Deviations from HCPCS Code Mean",
+              title = paste0("Standard Deviations from HCPCS Code Means Comparison ", y,
                              " Belonging to Cluster ", x,
                              " of ", ca[which(!duplicated(ca$provider_type))]$provider_type, " Providers")))
   print(v)
