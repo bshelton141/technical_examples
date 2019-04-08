@@ -25,12 +25,8 @@ if (file.exists(data_path)) {
 
 }
 
-# Ingest data from AWS s3 object with IAM credentials.
-set.seed(32541)
-Sys.setenv("AWS_ACCESS_KEY_ID" = "AKIAUL755PNFVNWYTNP7",
-           "AWS_SECRET_ACCESS_KEY" = "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",
-           "AWS_DEFAULT_REGION" = "us-east-2")
-ca <- aws.s3::s3read_using(FUN = fread, object = "medicare_california_pain_mgmt.csv", bucket = "example.data")
+# Ingest data from AWS s3 object.
+ca <- read.csv(url("https://s3.us-east-2.amazonaws.com/example.data/medicare_california_pain_mgmt.csv"), header = TRUE)
 
 
 #create a new field titled "lines_per_bene"
