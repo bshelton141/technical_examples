@@ -128,7 +128,7 @@ cluster_chart <- function(x, y) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1),
           axis.text.y = element_text(size = 8),
           legend.position = "none") +
-    labs(y = "Standard Deviations Mean",
+    labs(y = "Standard Deviations from Mean",
          title = paste0("Standard Deviations from Means Comparison '", y,
                              "' Belonging to Cluster ", x))
   print(v)
