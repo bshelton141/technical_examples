@@ -126,7 +126,7 @@ cluster_chart <- function(x, y) {
     geom_bar(stat = 'identity', position = "identity", width = .75) +
     facet_grid(Cluster ~ .) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1),
-          axis.text.y = element_tex(size = 8),
+          axis.text.y = element_text(size = 8),
           legend.position = "none") +
     labs(list(y = "Normalized Means",
               title = paste0("Normalized Means Comparison of HCPCS Code ", y,
