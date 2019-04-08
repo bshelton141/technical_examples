@@ -41,10 +41,7 @@ if (file.exists(data_path)) {
 ##################################################################################################
 
 set.seed(32541)
-Sys.setenv("AWS_ACCESS_KEY_ID" = "AKIAUL755PNFVNWYTNP7",
-           "AWS_SECRET_ACCESS_KEY" = "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",
-           "AWS_DEFAULT_REGION" = "us-east-2")
-loans1 <- aws.s3::s3read_using(FUN = fread, object = "loan_data.csv", bucket = "example.data")
+loans1 <- read.csv(url("https://s3.us-east-2.amazonaws.com/example.data/loan_data.csv"), header = TRUE)
 
 
 ##################################################################################################
