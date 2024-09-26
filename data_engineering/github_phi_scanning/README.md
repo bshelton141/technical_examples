@@ -1,6 +1,6 @@
 # README
 
-The `github_phi_scanning.py` script contains a function that exhaustively scans a specified GitHub repository 
+The `github_phi_scanning.py` script in this repo contains a function that exhaustively scans a specified GitHub repository 
 for specified PHI syntax, through regular expressions. 
 
 Scanning operations:
