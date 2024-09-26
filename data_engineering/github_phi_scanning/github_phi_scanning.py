@@ -39,7 +39,6 @@ Notes:
 requirements.txt included. Excecuted in Python 3.10
 '''
 
-
 import os
 import subprocess
 import re
@@ -49,10 +48,6 @@ from time import time
 import pytz
 from datetime import datetime
 import pandas as pd
-
-
-pacific = pytz.timezone('US/Pacific')
-
 
 
 # ------------------------------------------------------------
