@@ -27,7 +27,7 @@ Function outputs:
 
 Access Requirements:
   1. The ability to clone the target remote repository through an SSH connection.
-  2. A GitHub username and password that has access to the target remore repository.
+  2. A GitHub username and password that has access to the target remote repository.
   
 
 Notes:
