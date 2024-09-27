@@ -102,7 +102,7 @@ def scan_directory_for_phi(directory_path):
                file_name.endswith('.SQL') |\
                file_name.endswith('.md') |\
                file_name.endswith('.txt') |\
-               file_name.endswith('.csv')):  # Scan only Python files
+               file_name.endswith('.csv')):
                 file_path = os.path.join(root, file_name)
                 findings = scan_file_for_phi(file_path)
                 if findings:
